@@ -1,0 +1,85 @@
+chatterbox-coreml
+Copyright (c) 2026 Ilia Sazonov
+
+This product is licensed under the MIT License. See LICENSE for the full text.
+
+
+## What this copyright covers, and what it does not
+
+This repository contains two kinds of thing, owned by different people.
+
+**The code** — the Swift package (`Sources/`, `Tests/`), the demo app
+(`ChatterboxApp/`) and the documentation — is original work, © Ilia Sazonov,
+MIT-licensed under LICENSE.
+
+**The model weights are not covered by that copyright.** The CoreML packages this
+runtime downloads (`T3LM`, `S3Encoder`, `S3CFM`, `S3Vocoder`, the voice encoders,
+`PerthEncoder`, the RUAccent stress models) are *format conversions* of weights
+trained and published by others. They are derivative works that inherit their
+upstream licence, and copyright in them stays with the model authors named below.
+No claim of ownership over any of them is made here.
+
+
+## Upstream projects
+
+### Chatterbox — Resemble AI (MIT)
+
+  https://github.com/resemble-ai/chatterbox
+  Copyright (c) 2025 Resemble AI
+
+The TTS models this project converts and runs, and the reference implementation
+every stage of this port is validated against:
+
+  - ResembleAI/chatterbox-turbo      https://huggingface.co/ResembleAI/chatterbox-turbo
+  - ResembleAI/chatterbox-nano       https://huggingface.co/ResembleAI/chatterbox-nano
+  - ResembleAI/chatterbox            https://huggingface.co/ResembleAI/chatterbox
+
+All three are published under the MIT licence. The converted CoreML artifacts
+distributed at huggingface.co/iliasaz/chatterbox-*-coreml are derivatives of those
+weights and carry the same terms.
+
+`default-conds.safetensors` — the built-in default voice — is upstream's own, not
+something recorded for this project.
+
+### Perth (Perth-Net Implicit watermarker) — Resemble AI (MIT)
+
+  https://github.com/resemble-ai/Perth
+  Copyright (c) 2025 Resemble AI
+
+Every utterance this pipeline generates is watermarked with Perth, as upstream
+chatterbox does. Ported to CoreML in https://github.com/iliasaz/perth-coreml.
+
+### RUAccent — Denis Petrov (MIT)
+
+  https://github.com/Den4ikAI/ruaccent
+  Copyright 2026 Denis Petrov
+
+Russian lexical stress and homograph resolution, used to place stress marks before
+multilingual synthesis. The weights come from https://huggingface.co/ruaccent/accentuator
+(MIT). Ported to CoreML in https://github.com/iliasaz/ruaccent-coreml.
+
+### Demo voice prompts — Resemble AI
+
+The bundled reference voices are conditioning bundles derived from Resemble AI's own
+published demo prompts — the same audio their Chatterbox demo applications use, by
+anonymous speakers identified only by language and gender. Only the derived
+`*-conds.safetensors` are distributed here; the source audio is not redistributed.
+Source URLs and per-voice provenance:
+ChatterboxApp/ChatterboxApp/Voices/README.md
+
+
+## Swift dependencies
+
+  swift-transformers   https://github.com/huggingface/swift-transformers    Apache-2.0
+  swift-huggingface    https://github.com/huggingface/swift-huggingface     Apache-2.0
+  swift-safetensors    https://github.com/jkrukowski/swift-safetensors      MIT
+
+These are consumed as SwiftPM package dependencies; their sources are not vendored
+here. A binary built from this repository includes them under their own terms.
+
+
+## Acknowledgement
+
+https://github.com/ebrinz/chatterbox-turbo-coreml-converter — an earlier attempt at
+getting Chatterbox onto Apple Silicon. No code from it is used here, but seeing it
+work at all is what convinced me the problem was tractable and to keep digging.

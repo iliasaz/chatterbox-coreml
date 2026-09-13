@@ -1,0 +1,43 @@
+# Model artifacts — downloaded or built locally, never committed
+/out*/
+*.mlpackage/
+*.mlmodelc/
+*.safetensors
+*.npy
+*.pt
+# …except the app's bundled reference-voice conditioning (shipped resources).
+!ChatterboxApp/ChatterboxApp/Voices/
+!ChatterboxApp/ChatterboxApp/Voices/*.safetensors
+# …and the voice-cloning parity fixtures. These MUST be tracked: without them
+# `VoiceClonerTests.cloneMatchesPythonConds` guards itself out and passes as a
+# no-op, so an untracked fixture reads as a green suite that tests nothing.
+!Tests/ChatterboxCoreMLTests/Fixtures/female_random_podcast_24k.npy
+!Tests/ChatterboxCoreMLTests/Fixtures/female_random_podcast-conds.safetensors
+
+# Parity fixtures generated locally from upstream checkpoints (not committed)
+Tests/ChatterboxCoreMLTests/Fixtures/mtl-tokenizer/
+Tests/ChatterboxCoreMLTests/Fixtures/mtl-cond/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# macOS
+.DS_Store
+
+# Swift / Xcode
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+ChatterboxApp/build/
+
+# Logs
+logs/
+
+# Package.resolved is deliberately not committed: this is a library, and consumers
+# resolve their own dependency versions. Release verification runs against freshly
+# resolved dependencies for the same reason.
+/Package.resolved
