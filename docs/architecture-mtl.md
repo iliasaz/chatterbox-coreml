@@ -237,7 +237,7 @@ The three-package S3Gen synth is **variant-agnostic and auto-detected**
 multilingual S3CFM exposes a `spks_scale` input (turbo's meanflow CFM has `r`
 instead):
 
-- **S3Encoder** — re-exported with MTL weights; `speech_tokens → mu`. ANE.
+- **S3Encoder** — re-exported with MTL weights; `speech_tokens → mu`. CPU (`SynthRunner.encoderDefault` — on iOS 27 the ANE placement exhausts memory).
 - **S3CFM (multilingual-CFG)** — a **10-step cosine-schedule, classifier-free
   guidance** Euler loop. `t_span(s) = 1 − cos(s·π/2)`. Each step
   runs **TWO** estimator predicts: conditional (real mu/cond, `spks_scale=1`)

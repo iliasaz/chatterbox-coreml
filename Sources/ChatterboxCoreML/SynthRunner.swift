@@ -35,15 +35,17 @@ public struct PipelineComputeUnits: Sendable {
     /// background-capable path (iPhone has no background GPU — any GPU submission
     /// from a backgrounded app fails with "Insufficient Permissions to submit GPU
     /// work from background"). Among the synth stages only the CFM genuinely executes
-    /// on the ANE (its padded-ANE mode engages automatically via `usesANE`);
-    /// encoder/vocoder execute on CPU under this CU at their shapes (their ANE
-    /// "prepare and cache" is a one-time cost, E5-cached after). T3LM prefill/decode
+    /// on the ANE (its padded-ANE mode engages automatically via `usesANE`); the
+    /// vocoder executes on CPU under this CU at its shapes (its ANE "prepare and
+    /// cache" is a one-time cost, E5-cached after). The encoder is the exception: it
+    /// stays on ``SynthRunner/encoderDefault`` (CPU), which is background-safe too —
+    /// see there for why it must not be placed on the ANE. T3LM prefill/decode
     /// are already ANE-resident under the `.all` default — forcing
     /// `t3 = .cpuAndNeuralEngine` moves their small non-ANE segments off the GPU and
     /// onto the CPU (a device trace showed a per-decode-step GPU Request under `.all`,
     /// which is what breaks background execution).
     public static let neuralEngine = PipelineComputeUnits(
-        t3: .cpuAndNeuralEngine, encoder: .cpuAndNeuralEngine,
+        t3: .cpuAndNeuralEngine, encoder: SynthRunner.encoderDefault,
         cfm: .cpuAndNeuralEngine, vocoder: .cpuAndNeuralEngine,
         watermark: .cpuAndNeuralEngine)
 }
@@ -90,6 +92,16 @@ public struct PipelineComputeUnits: Sendable {
 /// concurrently, so off-actor use is race-free. (`cfmUsesANE` is the one property
 /// added since — still an immutable `let`, so the guarantee holds.)
 final class SynthRunner: @unchecked Sendable {
+    /// Where the S3Encoder runs unless the caller or `CHATTERBOX_SYNTH_ENC_CU` says otherwise:
+    /// the CPU, in the foreground AND in ``PipelineComputeUnits/neuralEngine``.
+    ///
+    /// On iOS 27 the encoder's flexible-length (`RangeDim`) graph on the Neural Engine takes the
+    /// process from ~0.7 GB to 2.3–3.5 GB; under that memory pressure the host app segfaulted
+    /// inside CoreML after the first long chunk (device-measured, iPhone 17 Pro Max, 2026-09-26).
+    /// On the CPU it stays at 0.7–1.2 GB and is also faster (0.07–0.48 s vs 0.55–0.8 s per chunk).
+    /// The CPU is not background-restricted, so the locked-phone placement keeps working.
+    static let encoderDefault: MLComputeUnits = .cpuOnly
+
     private let encoder: MLModel
     private let cfm: MLModel
     private let vocoder: MLModel
@@ -142,8 +154,8 @@ final class SynthRunner: @unchecked Sendable {
                 throw error
             }
         }
-        // Encoder → ANE (no warm speedup vs CPU, but it's the stated ANE-first target).
-        encoder = try load(encoderURL, cu("CHATTERBOX_SYNTH_ENC_CU", computeUnits.encoder, default: .cpuAndNeuralEngine), "S3Encoder")
+        // Encoder → CPU (see `encoderDefault`).
+        encoder = try load(encoderURL, cu("CHATTERBOX_SYNTH_ENC_CU", computeUnits.encoder, default: Self.encoderDefault), "S3Encoder")
         // CFM → cpuAndGPU by default (foreground). The converter's spks-broadcast fix
         // means every CU now loads clean; including the ANE flips on the padded mode.
         let cfmCU = cu("CHATTERBOX_SYNTH_CFM_CU", computeUnits.cfm, default: .cpuAndGPU)
